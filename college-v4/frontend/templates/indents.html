@@ -1,0 +1,478 @@
+{% extends "base.html" %}
+{% block title %}Indents{% endblock %}
+{% block breadcrumb %}
+    <a href="/" class="text-teal-600 hover:text-teal-800">Dashboard</a> /
+    <span class="text-slate-900 font-bold">Indent</span>
+{% endblock %}
+
+{% block content %}
+<div class="mb-8">
+    <a href="/" class="text-base font-semibold text-teal-600 hover:text-teal-800 transition flex items-center mb-4">
+        <span class="mr-1 text-xl">←</span> Back to Dashboard
+    </a>
+</div>
+
+{% if not is_admin %}
+
+<!-- ── SECTION 1: Option Cards (shown by default) ── -->
+<div id="sec-options">
+    <h2 class="text-4xl font-extrabold text-slate-900 mb-2">Indent Management</h2>
+    <p class="text-slate-600 mt-2 mb-8">Create a new indent form or check the status of existing indents.</p>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <button onclick="goTo('sec-form')" class="bg-white p-8 rounded-lg card-clean border hover:border-teal-500 cursor-pointer text-center flex flex-col items-center justify-center">
+            <span class="text-5xl mb-4">&#9997;&#65039;</span>
+            <h3 class="text-xl font-bold text-slate-900">Create New Indent Form</h3>
+            <p class="text-sm text-slate-500 mt-1">Fill out and submit a new list of required items.</p>
+        </button>
+        <button onclick="goTo('sec-status')" class="bg-white p-8 rounded-lg card-clean border hover:border-teal-500 cursor-pointer text-center flex flex-col items-center justify-center">
+            <span class="text-5xl mb-4">&#128203;</span>
+            <h3 class="text-xl font-bold text-slate-900">View Indent Status</h3>
+            <p class="text-sm text-slate-500 mt-1">Check the approval status of your submitted indents.</p>
+        </button>
+    </div>
+</div>
+
+<!-- ── SECTION 2: Create Indent Form ── -->
+<div id="sec-form" style="display:none;">
+    <button onclick="goTo('sec-options')" class="text-base font-semibold text-teal-600 hover:text-teal-800 transition flex items-center mb-6">
+        <span class="mr-1 text-xl">←</span> Back
+    </button>
+    <div class="bg-white p-8 rounded-lg card-clean border">
+        <div class="text-center mb-8">
+            <h2 class="text-2xl font-bold text-slate-800">PRAGATI ENGINEERING COLLEGE</h2>
+            <p class="text-sm text-slate-600">(AUTONOMOUS)</p>
+            <p class="text-xs text-slate-500"># 1-378, ADB Road, SURAMPALEM - 533437, E.G.Dist., A.P.</p>
+            <h3 class="text-xl font-bold text-slate-800 mt-4 underline underline-offset-4">INDENT</h3>
+        </div>
+        <div class="grid grid-cols-3 gap-4 mb-4 text-sm">
+            <div><span class="font-semibold">Department:</span> <span class="text-teal-700 font-bold">{{ user_dept }}</span></div>
+            <div><span class="font-semibold">No.:</span> <span id="indent-no" class="text-slate-500"></span></div>
+            <div><span class="font-semibold">Date:</span> <span id="indent-date" class="text-slate-500"></span></div>
+        </div>
+        <div class="border rounded-lg overflow-hidden mb-4">
+            <table class="min-w-full">
+                <thead class="bg-slate-100">
+                    <tr>
+                        <th class="px-4 py-2 text-left text-xs font-semibold uppercase w-16">S.No</th>
+                        <th class="px-4 py-2 text-left text-xs font-semibold uppercase">Particulars</th>
+                        <th class="px-4 py-2 text-left text-xs font-semibold uppercase w-32">Quantity</th>
+                        <th class="px-4 py-2 text-center text-xs font-semibold uppercase w-24">Remove</th>
+                    </tr>
+                </thead>
+                <tbody id="indent-rows" class="divide-y divide-slate-200"></tbody>
+            </table>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-4 pt-4 border-t">
+            <div>
+                <label class="block text-sm font-medium text-slate-700">Ordered by:</label>
+                <input type="text" id="indent-ordered-by" class="w-full mt-1 p-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500" placeholder="Your name">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-slate-500">Bill No.:</label>
+                <p class="mt-1 p-2 text-slate-400 text-sm">(Admin Entry)</p>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-slate-500">Passed by:</label>
+                <p class="mt-1 p-2 text-slate-400 text-sm">(Admin Entry)</p>
+            </div>
+        </div>
+        <div class="flex justify-between items-center mt-8">
+            <button type="button" id="add-row-btn" class="bg-gray-200 text-gray-700 font-semibold py-2 px-4 rounded-lg hover:bg-gray-300 transition">&#10133; Add Row</button>
+            <button type="button" id="submit-indent-btn" class="bg-teal-600 text-white font-semibold py-3 px-8 rounded-lg shadow-lg hover:bg-teal-700 transition">Submit Indent</button>
+        </div>
+    </div>
+</div>
+
+<!-- ── SECTION 3: View Indent Status ── -->
+<div id="sec-status" style="display:none;">
+    <button onclick="goTo('sec-options')" class="text-base font-semibold text-teal-600 hover:text-teal-800 transition flex items-center mb-6">
+        <span class="mr-1 text-xl">←</span> Back
+    </button>
+    <h2 class="text-3xl font-bold text-slate-800 mb-6">My Indent Status</h2>
+    <div class="bg-white rounded-lg card-clean border overflow-x-auto">
+        <table class="min-w-full divide-y divide-slate-100">
+            <thead class="bg-slate-50">
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Date</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Indent No.</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Department</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Items</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Status</th>
+                </tr>
+            </thead>
+            <tbody id="user-indents-table" class="bg-white divide-y divide-slate-100">
+                <tr><td colspan="5" class="text-center py-8 text-slate-400">Loading...</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% endif %}
+
+{% if is_admin %}
+
+<!-- ── ADMIN: History ── -->
+<div class="mb-10">
+    <h2 class="text-3xl font-bold text-slate-800 mb-2">Indent Management</h2>
+    <h3 class="text-xl font-semibold text-slate-600 mb-4 mt-6">History (Solved / Rejected)</h3>
+    <div class="bg-white rounded-lg card-clean border overflow-x-auto">
+        <table class="min-w-full divide-y divide-slate-100">
+            <thead class="bg-slate-50">
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Date</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Indent No.</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Department</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Items</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Status</th>
+                </tr>
+            </thead>
+            <tbody id="indent-history-table" class="bg-white divide-y divide-slate-100">
+                <tr><td colspan="5" class="text-center py-8 text-slate-400">Loading...</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ── ADMIN: Pending ── -->
+<div id="admin-pending-section">
+    <h3 class="text-xl font-semibold text-slate-600 mb-4">Pending Indents</h3>
+    <div class="bg-white rounded-lg card-clean border overflow-x-auto">
+        <table class="min-w-full divide-y divide-slate-100">
+            <thead class="bg-slate-50">
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Date</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Indent No.</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Department</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Items</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Action</th>
+                </tr>
+            </thead>
+            <tbody id="pending-indents-table" class="bg-white divide-y divide-slate-100">
+                <tr><td colspan="5" class="text-center py-8 text-slate-400">Loading...</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ── ADMIN: Review ── -->
+<div id="admin-review-section" style="display:none; margin-top:2rem;">
+    <button id="back-from-review" class="text-base font-semibold text-teal-600 hover:text-teal-800 transition flex items-center mb-6">
+        <span class="mr-1 text-xl">←</span> Back to Indent List
+    </button>
+    <h2 class="text-4xl font-extrabold text-slate-900 mb-2">Review Indent</h2>
+    <div class="flex flex-col sm:flex-row sm:space-x-8 mb-6 text-sm text-slate-600">
+        <span><strong>Indent No:</strong> <span id="rv-no"></span></span>
+        <span><strong>Department:</strong> <span id="rv-dept"></span></span>
+        <span><strong>Date:</strong> <span id="rv-date"></span></span>
+        <span><strong>Ordered By:</strong> <span id="rv-ordered"></span></span>
+    </div>
+    <input type="hidden" id="rv-id">
+    <div class="bg-white rounded-lg card-clean border overflow-x-auto mb-6">
+        <table class="min-w-full">
+            <thead class="bg-slate-50">
+                <tr>
+                    <th class="px-4 py-2 text-left text-xs font-semibold uppercase w-16">S.No</th>
+                    <th class="px-4 py-2 text-left text-xs font-semibold uppercase">Particulars</th>
+                    <th class="px-4 py-2 text-left text-xs font-semibold uppercase w-32">Qty Requested</th>
+                    <th class="px-4 py-2 text-left text-xs font-semibold uppercase w-32">Qty Approved</th>
+                    <th class="px-4 py-2 text-left text-xs font-semibold uppercase w-48">Item Status</th>
+                </tr>
+            </thead>
+            <tbody id="rv-items-table" class="divide-y divide-slate-200"></tbody>
+        </table>
+    </div>
+    <div class="flex justify-end">
+        <button id="process-btn" class="bg-teal-600 text-white font-semibold py-3 px-8 rounded-lg shadow-lg hover:bg-teal-700 transition">Process Indent</button>
+    </div>
+</div>
+
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script type="application/json" id="config">
+{
+  "is_admin": {{ is_admin | tojson }},
+  "user_dept": "{{ user_dept }}",
+  "stationary_list": {{ stationary_list | tojson }}
+}
+</script>
+<script>
+const config = JSON.parse(document.getElementById('config').textContent);
+const IS_ADMIN = config.is_admin;
+const USER_DEPT = config.user_dept;
+const STATIONARY_LIST = config.stationary_list;
+let allIndents = [];
+
+// ── Section navigation (user only) ───────────────────────────
+function goTo(sectionId) {
+    ['sec-options','sec-form','sec-status'].forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el) el.style.display = 'none';
+    });
+    var target = document.getElementById(sectionId);
+    if (target) target.style.display = 'block';
+    if (sectionId === 'sec-status') loadUserIndents();
+    if (sectionId === 'sec-form') initForm();
+}
+
+// ── Init indent form ─────────────────────────────────────────
+function initForm() {
+    document.getElementById('indent-no').textContent = 'IND-' + Date.now();
+    document.getElementById('indent-date').textContent = new Date().toLocaleDateString('en-IN');
+    document.getElementById('indent-rows').innerHTML = '';
+    document.getElementById('indent-ordered-by').value = '';
+    for (var i = 0; i < 5; i++) addRow();
+}
+
+function addRow() {
+    var tbody = document.getElementById('indent-rows');
+    if (!tbody) return;
+    var idx = tbody.rows.length + 1;
+    var tr = document.createElement('tr');
+    var opts = STATIONARY_LIST.map(function(s) {
+        return '<option value="' + s + '">' + s + '</option>';
+    }).join('');
+    tr.innerHTML =
+        '<td class="px-4 py-2 text-slate-500 sno">' + idx + '</td>' +
+        '<td class="px-4 py-2">' +
+            '<select class="item-sel w-full p-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500">' +
+                '<option value="">-- Select Item --</option>' + opts +
+            '</select>' +
+        '</td>' +
+        '<td class="px-4 py-2">' +
+            '<input type="number" min="1" placeholder="Qty" class="qty-inp w-full p-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500">' +
+        '</td>' +
+        '<td class="px-4 py-2 text-center">' +
+            '<button type="button" class="del-btn text-red-500 hover:text-red-700 font-bold text-lg">&#10005;</button>' +
+        '</td>';
+    tbody.appendChild(tr);
+    tr.querySelector('.del-btn').addEventListener('click', function() {
+        tr.remove();
+        var rows = tbody.querySelectorAll('.sno');
+        rows.forEach(function(c, i) { c.textContent = i + 1; });
+    });
+}
+
+// ── Load user indents ─────────────────────────────────────────
+async function loadUserIndents() {
+    var tbody = document.getElementById('user-indents-table');
+    tbody.innerHTML = '<tr><td colspan="5" class="text-center py-8 text-slate-400">Loading...</td></tr>';
+    var data = await apiFetch('/api/indents');
+    if (!data || !data.length) {
+        tbody.innerHTML = '<tr><td colspan="5" class="text-center py-8 text-slate-500">No indents submitted yet.</td></tr>';
+        return;
+    }
+    var colors = {Pending:'text-yellow-600','In Progress':'text-blue-600',Solved:'text-green-600',Rejected:'text-red-600'};
+    tbody.innerHTML = data.map(function(ind) {
+        var d = new Date(ind.created_at).toLocaleDateString('en-IN');
+        var c = colors[ind.status] || 'text-slate-600';
+        var items = (ind.items || []).map(function(i) {
+            if (i.itemStatus) {
+                var ic = i.itemStatus==='Approved'?'text-green-600':i.itemStatus==='Rejected'?'text-red-500 line-through':'text-amber-600';
+                return '<span class="block text-xs ' + ic + '">' + i.item + ' (' + (i.approvedQty||0) + '/' + i.quantity + ')</span>';
+            }
+            return '<span class="block text-xs">' + i.item + ' x' + i.quantity + '</span>';
+        }).join('');
+        return '<tr class="hover:bg-slate-50">' +
+            '<td class="px-6 py-4 text-sm">' + d + '</td>' +
+            '<td class="px-6 py-4 text-sm font-mono">' + ind.indent_no + '</td>' +
+            '<td class="px-6 py-4 font-semibold">' + ind.department + '</td>' +
+            '<td class="px-6 py-4">' + items + '</td>' +
+            '<td class="px-6 py-4 font-semibold ' + c + '">' + ind.status + '</td>' +
+            '</tr>';
+    }).join('');
+}
+
+// ── Admin: load indents ───────────────────────────────────────
+async function loadAdminIndents() {
+    allIndents = await apiFetch('/api/indents');
+    if (!allIndents) return;
+
+    var history = allIndents.filter(function(i){ return ['Solved','Rejected'].includes(i.status); });
+    var pending = allIndents.filter(function(i){ return ['Pending','In Progress'].includes(i.status); });
+
+    renderAdminTable('indent-history-table', history, false);
+    renderAdminTable('pending-indents-table', pending, true);
+}
+
+function renderAdminTable(tbodyId, data, withActions) {
+    var tbody = document.getElementById(tbodyId);
+    if (!tbody) return;
+    var colors = {Pending:'text-yellow-600','In Progress':'text-blue-600',Solved:'text-green-600',Rejected:'text-red-600'};
+    if (!data.length) {
+        tbody.innerHTML = '<tr><td colspan="5" class="text-center py-8 text-slate-500">No records found.</td></tr>';
+        return;
+    }
+    tbody.innerHTML = data.map(function(ind) {
+        var d = new Date(ind.created_at).toLocaleDateString('en-IN');
+        var c = colors[ind.status] || 'text-slate-600';
+        var items = (ind.items || []).map(function(i) {
+            if (i.itemStatus) {
+                var ic = i.itemStatus==='Approved'?'text-green-600':i.itemStatus==='Rejected'?'text-red-500 line-through':'text-amber-600';
+                return '<span class="block text-xs ' + ic + '">' + i.item + ' (' + (i.approvedQty||0) + '/' + i.quantity + ')</span>';
+            }
+            return '<span class="block text-xs">' + i.item + ' x' + i.quantity + '</span>';
+        }).join('');
+        var action;
+        if (!withActions) {
+            action = '<td class="px-6 py-4 font-semibold ' + c + '">' + ind.status + '</td>';
+        } else if (ind.status === 'Pending') {
+            action = '<td class="px-6 py-4 space-x-2">' +
+                '<button data-id="' + ind.id + '" class="review-btn bg-blue-500 text-white px-3 py-1 rounded text-sm">Review</button>' +
+                '<button data-id="' + ind.id + '" class="reject-btn bg-red-500 text-white px-3 py-1 rounded text-sm">Reject</button>' +
+                '</td>';
+        } else if (ind.status === 'In Progress') {
+            action = '<td class="px-6 py-4">' +
+                '<select data-id="' + ind.id + '" class="status-sel p-2 border rounded text-sm">' +
+                '<option value="In Progress" selected>In Progress</option>' +
+                '<option value="Solved">Mark as Solved</option>' +
+                '</select></td>';
+        } else {
+            action = '<td class="px-6 py-4 font-semibold ' + c + '">' + ind.status + '</td>';
+        }
+        return '<tr class="hover:bg-slate-50">' +
+            '<td class="px-6 py-4 text-sm">' + d + '</td>' +
+            '<td class="px-6 py-4 text-sm font-mono">' + ind.indent_no + '</td>' +
+            '<td class="px-6 py-4 font-semibold">' + ind.department + '</td>' +
+            '<td class="px-6 py-4">' + items + '</td>' +
+            action + '</tr>';
+    }).join('');
+
+    if (withActions) {
+        tbody.querySelectorAll('.review-btn').forEach(function(b) {
+            b.addEventListener('click', function() { openReview(b.dataset.id); });
+        });
+        tbody.querySelectorAll('.reject-btn').forEach(function(b) {
+            b.addEventListener('click', function() { doIndentAction(b.dataset.id, 'Rejected', null); });
+        });
+        tbody.querySelectorAll('.status-sel').forEach(function(s) {
+            s.addEventListener('change', function() { doIndentAction(s.dataset.id, s.value, null); });
+        });
+    }
+}
+
+async function doIndentAction(id, status, items) {
+    var payload = { status: status };
+    if (items) payload.items = items;
+    if (status === 'Rejected' && !items) {
+        var ind = allIndents.find(function(i){ return i.id == id; });
+        payload.items = (ind.items||[]).map(function(it){
+            return Object.assign({}, it, {approvedQty:0, itemStatus:'Rejected'});
+        });
+    }
+    await apiFetch('/api/indents/' + id, 'PUT', payload);
+    showToast('Indent updated!');
+    loadAdminIndents();
+}
+
+function openReview(id) {
+    var ind = allIndents.find(function(i){ return i.id == id; });
+    if (!ind) return;
+    document.getElementById('rv-id').value = id;
+    document.getElementById('rv-no').textContent = ind.indent_no;
+    document.getElementById('rv-dept').textContent = ind.department;
+    document.getElementById('rv-date').textContent = new Date(ind.created_at).toLocaleDateString('en-IN');
+    document.getElementById('rv-ordered').textContent = ind.ordered_by || '—';
+    document.getElementById('rv-items-table').innerHTML = (ind.items||[]).map(function(item, i) {
+        return '<tr>' +
+            '<td class="px-4 py-2">' + (i+1) + '</td>' +
+            '<td class="px-4 py-2">' + item.item + '</td>' +
+            '<td class="px-4 py-2">' + item.quantity + '</td>' +
+            '<td class="px-4 py-2"><input type="number" class="w-full p-2 border rounded aqty" value="' + item.quantity + '" min="0" max="' + item.quantity + '"></td>' +
+            '<td class="px-4 py-2"><select class="w-full p-2 border rounded istat">' +
+                '<option value="Approved" selected>Approved</option>' +
+                '<option value="Partial">Partial</option>' +
+                '<option value="Rejected">Rejected</option>' +
+                '<option value="Out of Stock">Out of Stock</option>' +
+            '</select></td></tr>';
+    }).join('');
+    document.getElementById('admin-pending-section').style.display = 'none';
+    document.getElementById('admin-review-section').style.display = 'block';
+}
+
+window.addEventListener('load', function() {
+
+    if (!IS_ADMIN) {
+        // Init form on load
+        initForm();
+
+        // Add Row button
+        var addBtn = document.getElementById('add-row-btn');
+        if (addBtn) addBtn.addEventListener('click', addRow);
+
+        // Submit Indent button
+        var submitBtn = document.getElementById('submit-indent-btn');
+        if (submitBtn) {
+            submitBtn.addEventListener('click', async function() {
+                var rows = document.querySelectorAll('#indent-rows tr');
+                var items = [];
+                rows.forEach(function(r) {
+                    var sel = r.querySelector('.item-sel');
+                    var qty = r.querySelector('.qty-inp');
+                    if (sel && qty && sel.value && qty.value) {
+                        items.push({ item: sel.value, quantity: qty.value });
+                    }
+                });
+
+                if (!items.length) {
+                    showToast('Please select at least one item and enter a quantity.');
+                    return;
+                }
+                var ordered_by = document.getElementById('indent-ordered-by').value.trim();
+                if (!ordered_by) {
+                    showToast('Please enter your name in the "Ordered by" field.');
+                    return;
+                }
+
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'Submitting...';
+
+                var result = await apiFetch('/api/indents', 'POST', { ordered_by: ordered_by, items: items });
+
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Submit Indent';
+
+                if (!result) return;
+                showToast('Indent submitted successfully!');
+                goTo('sec-options');
+            });
+        }
+    }
+
+    if (IS_ADMIN) {
+        loadAdminIndents();
+
+        // Back from review
+        var backBtn = document.getElementById('back-from-review');
+        if (backBtn) {
+            backBtn.addEventListener('click', function() {
+                document.getElementById('admin-review-section').style.display = 'none';
+                document.getElementById('admin-pending-section').style.display = 'block';
+                loadAdminIndents();
+            });
+        }
+
+        // Process indent
+        var processBtn = document.getElementById('process-btn');
+        if (processBtn) {
+            processBtn.addEventListener('click', async function() {
+                var id = document.getElementById('rv-id').value;
+                var ind = allIndents.find(function(i){ return i.id == id; });
+                var rows = document.querySelectorAll('#rv-items-table tr');
+                var allRej = true;
+                var items = (ind.items||[]).map(function(it, idx) {
+                    var aqty = rows[idx].querySelector('.aqty').value;
+                    var istat = rows[idx].querySelector('.istat').value;
+                    if (istat !== 'Rejected' && parseInt(aqty) > 0) allRej = false;
+                    return Object.assign({}, it, { approvedQty: aqty, itemStatus: istat });
+                });
+                await doIndentAction(id, allRej ? 'Rejected' : 'In Progress', items);
+                document.getElementById('admin-review-section').style.display = 'none';
+                document.getElementById('admin-pending-section').style.display = 'block';
+            });
+        }
+    }
+});
+</script>
+{% endblock %}
