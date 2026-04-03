@@ -1,0 +1,13 @@
+{
+  "javascript.validate.enable": false,
+  "typescript.validate.enable": false,
+  "[html]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[jinja-html]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "problems.exclude": {
+    "**/*.html": true
+  }
+}
