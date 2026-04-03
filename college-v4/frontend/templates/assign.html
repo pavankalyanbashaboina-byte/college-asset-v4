@@ -1,0 +1,110 @@
+
+{% extends "base.html" %}
+{% block title %}Assign Items{% endblock %}
+{% block breadcrumb %}
+    <a href="/" class="text-teal-600 hover:text-teal-800">Dashboard</a> /
+    <span class="text-slate-900 font-bold">Request Item</span>
+{% endblock %}
+
+{% block content %}
+<div class="mb-8">
+    <a href="/" class="text-base font-semibold text-teal-600 hover:text-teal-800 transition flex items-center mb-6">
+        <span class="mr-1 text-xl">←</span> Back to Dashboard
+    </a>
+    <h2 class="text-4xl font-extrabold text-slate-900">Assign / Request Item</h2>
+    <p class="text-slate-600 mt-2">Log items that have been assigned to a person or location.</p>
+</div>
+
+<!-- Assign Form -->
+<div class="bg-white p-6 rounded-lg card-clean border mb-12">
+    <form id="assign-form" class="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
+        <div id="dept-group" class="md:col-span-1">
+            <label class="block text-sm font-medium text-slate-700 mb-1">Department</label>
+            <select id="assign-department" class="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500">
+                {% for d in departments %}
+                <option value="{{ d }}">{{ d }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="md:col-span-2">
+            <label class="block text-sm font-medium text-slate-700 mb-1">Item(s)</label>
+            <select id="assign-item" required class="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500">
+                <option value="" disabled selected>Select an item</option>
+                {% for item in stationary_list %}
+                <option value="{{ item }}">{{ item }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <label class="block text-sm font-medium text-slate-700 mb-1">Quantity</label>
+            <input type="number" id="assign-quantity" min="1" required
+                class="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500">
+        </div>
+        <div>
+            <button type="submit" class="w-full bg-teal-600 text-white font-semibold py-3 px-6 rounded-lg shadow-lg hover:bg-teal-700 transition">Submit</button>
+        </div>
+    </form>
+</div>
+
+<!-- Assignment History -->
+<h3 class="text-3xl font-bold text-slate-800 mb-6">Assignment History</h3>
+<div class="bg-white rounded-lg card-clean border overflow-x-auto">
+    <table class="min-w-full divide-y divide-slate-100">
+        <thead class="bg-slate-50">
+            <tr>
+                <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Date</th>
+                <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Department</th>
+                <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Item(s)</th>
+                <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Quantity</th>
+            </tr>
+        </thead>
+        <tbody id="assignment-history" class="bg-white divide-y divide-slate-100">
+            <tr><td colspan="4" class="text-center py-8 text-slate-400">Loading…</td></tr>
+        </tbody>
+    </table>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function loadHistory() {
+    const all = await apiFetch('/api/requests');
+    if (!all) return;
+    const approved = all.filter(r => r.status === 'Approved');
+    const tbody = document.getElementById('assignment-history');
+    if (!approved.length) {
+        tbody.innerHTML = '<tr><td colspan="4" class="text-center py-8 text-slate-500">No assignment history found.</td></tr>';
+        return;
+    }
+    tbody.innerHTML = approved.map(r => {
+        const d = new Date(r.created_at).toLocaleDateString('en-IN');
+        return `<tr class="hover:bg-slate-50">
+            <td class="px-6 py-4">${d}</td>
+            <td class="px-6 py-4 font-semibold">${r.department}</td>
+            <td class="px-6 py-4">${r.item}</td>
+            <td class="px-6 py-4">${r.quantity}</td>
+        </tr>`;
+    }).join('');
+}
+
+document.getElementById('assign-form').addEventListener('submit', async e => {
+    e.preventDefault();
+    const dept = document.getElementById('assign-department').value;
+    const item = document.getElementById('assign-item').value;
+    const quantity = document.getElementById('assign-quantity').value;
+
+    if (!item) { showToast('Please select an item.'); return; }
+    if (!quantity) { showToast('Please enter a quantity.'); return; }
+
+    const newReq = await apiFetch('/api/requests', 'POST', { department: dept, item, quantity });
+    if (!newReq) return;
+    // Admin directly approves it
+    await apiFetch('/api/requests/' + newReq.id, 'PUT', { status: 'Approved' });
+    showToast('Assignment logged successfully!');
+    e.target.reset();
+    loadHistory();
+});
+
+loadHistory();
+</script>
+{% endblock %}
