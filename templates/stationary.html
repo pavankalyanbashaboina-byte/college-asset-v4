@@ -1,0 +1,272 @@
+
+{% extends "base.html" %}
+{% block title %}{% if is_admin %}Manage Stationary{% else %}Upload Stationary{% endif %}{% endblock %}
+{% block breadcrumb %}
+    <a href="/" class="text-teal-600 hover:text-teal-800">Dashboard</a> /
+    <span class="text-slate-900 font-bold">{% if is_admin %}Manage Stationary{% else %}Upload Stationary{% endif %}</span>
+{% endblock %}
+
+{% block content %}
+<div class="mb-8">
+    <a href="/" class="text-base font-semibold text-teal-600 hover:text-teal-800 transition flex items-center mb-6">
+        <span class="mr-1 text-xl">←</span> Back to Dashboard
+    </a>
+    <h2 class="text-4xl font-extrabold text-slate-900">
+        {% if is_admin %}Manage Stationary{% else %}Upload New Stationary{% endif %}
+    </h2>
+    <p class="text-slate-600 mt-2">
+        {% if is_admin %}Approve or reject new stationary requests from departments.{% else %}Request new stationary items to be approved by the admin.{% endif %}
+    </p>
+</div>
+
+{% if not is_admin %}
+<!-- User: Submit Form -->
+<div class="bg-white p-6 rounded-lg card-clean border mb-12">
+    <h3 class="text-2xl font-bold text-slate-800 mb-6">Add New Stationary Request</h3>
+    <form id="stationary-upload-form" class="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div>
+            <label class="block text-sm font-medium text-slate-700 mb-1">Item Name</label>
+            <input type="text" id="other-name" placeholder="e.g., Lab Equipment" required class="w-full px-4 py-3 border border-slate-300 rounded-lg">
+        </div>
+        <div>
+            <label class="block text-sm font-medium text-slate-700 mb-1">Quantity</label>
+            <input type="number" id="other-quantity" min="1" required class="w-full px-4 py-3 border border-slate-300 rounded-lg">
+        </div>
+        <div class="md:col-span-2">
+            <label class="block text-sm font-medium text-slate-700 mb-1">Description</label>
+            <textarea id="other-desc" rows="1" placeholder="Item description or specifications..." class="w-full px-4 py-3 border border-slate-300 rounded-lg"></textarea>
+        </div>
+        <div class="md:col-span-4 flex justify-end">
+            <button type="submit" class="bg-teal-600 text-white font-semibold py-3 px-6 rounded-lg shadow-lg hover:bg-teal-700 transition">Submit Request</button>
+        </div>
+    </form>
+</div>
+{% endif %}
+
+{% if is_admin %}
+<!-- Admin: Manage Stationary Items -->
+<div class="bg-white p-6 rounded-lg card-clean border mb-12">
+    <h3 class="text-2xl font-bold text-slate-800 mb-6">Manage Stationary Items</h3>
+    <button id="add-stationary-btn" class="bg-teal-600 text-white font-semibold py-3 px-6 rounded-lg shadow-lg hover:bg-teal-700 transition mb-6">Add New Item</button>
+    <div class="bg-white rounded-lg card-clean border overflow-x-auto">
+        <table class="min-w-full divide-y">
+            <thead class="bg-slate-50">
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Name</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Description</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Actions</th>
+                </tr>
+            </thead>
+            <tbody id="stationary-items-table" class="bg-white divide-y divide-slate-100"></tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Modal for Add/Edit -->
+<div id="stationary-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
+    <div class="bg-white p-6 rounded-lg w-96">
+        <h3 id="modal-title" class="text-xl font-bold mb-4">Add Stationary Item</h3>
+        <form id="stationary-form">
+            <input type="hidden" id="item-id">
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-slate-700 mb-1">Name</label>
+                <input type="text" id="item-name" required class="w-full px-4 py-3 border border-slate-300 rounded-lg">
+            </div>
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-slate-700 mb-1">Description</label>
+                <textarea id="item-description" rows="3" class="w-full px-4 py-3 border border-slate-300 rounded-lg"></textarea>
+            </div>
+            <div class="flex justify-end space-x-2">
+                <button type="button" id="cancel-btn" class="bg-gray-500 text-white px-4 py-2 rounded">Cancel</button>
+                <button type="submit" class="bg-teal-600 text-white px-4 py-2 rounded">Save</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Admin: Pending Requests -->
+<div class="mb-12">
+    <h3 class="text-3xl font-bold text-slate-800 mb-6">Pending Stationary Requests</h3>
+    <div class="bg-white rounded-lg card-clean border overflow-x-auto">
+        <table class="min-w-full divide-y">
+            <thead class="bg-slate-50">
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Department</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Name</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Description</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Quantity</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Action</th>
+                </tr>
+            </thead>
+            <tbody id="stationary-pending-table" class="bg-white divide-y divide-slate-100"></tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+<!-- List: My Requests (user) / All Approved (admin) -->
+<div>
+    <h3 class="text-3xl font-bold text-slate-800 mb-6">
+        {% if is_admin %}All Stationary Requests{% else %}My Stationary Requests{% endif %}
+    </h3>
+    <div class="bg-white rounded-lg card-clean border overflow-x-auto">
+        <table class="min-w-full divide-y">
+            <thead class="bg-slate-50">
+                <tr>
+                    {% if is_admin %}<th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Department</th>{% endif %}
+                    <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Name</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Description</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Quantity</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Status</th>
+                </tr>
+            </thead>
+            <tbody id="stationary-list-table" class="bg-white divide-y divide-slate-100"></tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script data-is-admin="{{ is_admin }}">
+const IS_ADMIN = document.currentScript.dataset.isAdmin === 'True';
+
+async function loadStationary() {
+    const all = await apiFetch('/api/requests/stationary');
+    if (!all) return;
+    if (IS_ADMIN) {
+        renderPending(all.filter(r => r.status === 'Pending'));
+        renderList(all);
+        loadStationaryItems();
+    } else {
+        renderList(all);
+    }
+}
+
+async function loadStationaryItems() {
+    const items = await apiFetch('/api/stationary');
+    if (!items) return;
+    renderStationaryItems(items);
+}
+
+function renderStationaryItems(data) {
+    const tbody = document.getElementById('stationary-items-table');
+    if (!data.length) { tbody.innerHTML = `<tr><td colspan="3" class="text-center py-8 text-slate-500">No stationary items.</td></tr>`; return; }
+    tbody.innerHTML = data.map(item => `
+        <tr class="hover:bg-slate-50">
+            <td class="px-6 py-4 font-semibold">${item.name}</td>
+            <td class="px-6 py-4 text-sm text-slate-600">${item.description || ''}</td>
+            <td class="px-6 py-4 space-x-2">
+                <button data-id="${item.id}" class="edit-btn bg-blue-500 text-white px-3 py-1 rounded-md text-sm">Edit</button>
+                <button data-id="${item.id}" class="delete-btn bg-red-500 text-white px-3 py-1 rounded-md text-sm">Delete</button>
+            </td>
+        </tr>`).join('');
+    tbody.querySelectorAll('.edit-btn').forEach(b => b.addEventListener('click', () => editItem(b.dataset.id)));
+    tbody.querySelectorAll('.delete-btn').forEach(b => b.addEventListener('click', () => deleteItem(b.dataset.id)));
+}
+
+function renderPending(data) {
+    const tbody = document.getElementById('stationary-pending-table');
+    if (!data.length) { tbody.innerHTML = `<tr><td colspan="5" class="text-center py-8 text-slate-500">No pending requests.</td></tr>`; return; }
+    tbody.innerHTML = data.map(r => `
+        <tr class="hover:bg-slate-50">
+            <td class="px-6 py-4 font-semibold">${r.department}</td>
+            <td class="px-6 py-4 font-semibold">${r.name}</td>
+            <td class="px-6 py-4 text-sm text-slate-600">${r.description||''}</td>
+            <td class="px-6 py-4">${r.quantity}</td>
+            <td class="px-6 py-4 space-x-2">
+                <button data-id="${r.id}" class="accept-btn bg-green-500 text-white px-3 py-1 rounded-md text-sm">Accept</button>
+                <button data-id="${r.id}" class="reject-btn bg-red-500 text-white px-3 py-1 rounded-md text-sm">Reject</button>
+            </td>
+        </tr>`).join('');
+    tbody.querySelectorAll('.accept-btn').forEach(b => b.addEventListener('click', () => handleAction(b.dataset.id, 'Approved')));
+    tbody.querySelectorAll('.reject-btn').forEach(b => b.addEventListener('click', () => handleAction(b.dataset.id, 'Rejected')));
+}
+
+function renderList(data) {
+    const tbody = document.getElementById('stationary-list-table');
+    if (!data.length) { tbody.innerHTML = `<tr><td colspan="5" class="text-center py-8 text-slate-500">No requests yet.</td></tr>`; return; }
+    tbody.innerHTML = data.map(r => {
+        const c = r.status==='Approved'?'text-green-600':r.status==='Pending'?'text-yellow-600':'text-red-600';
+        return `<tr class="hover:bg-slate-50">
+            ${IS_ADMIN ? `<td class="px-6 py-4 font-semibold">${r.department}</td>` : ''}
+            <td class="px-6 py-4 font-semibold">${r.name}</td>
+            <td class="px-6 py-4 text-sm text-slate-600">${r.description||''}</td>
+            <td class="px-6 py-4">${r.quantity}</td>
+            <td class="px-6 py-4 font-semibold ${c}">${r.status}</td>
+        </tr>`;
+    }).join('');
+}
+
+async function handleAction(id, status) {
+    await apiFetch('/api/requests/stationary/' + id, 'PUT', { status });
+    showToast('Request ' + status.toLowerCase() + '!');
+    loadStationary();
+}
+
+async function editItem(id) {
+    const items = await apiFetch('/api/stationary');
+    const item = items.find(i => i.id == id);
+    if (item) {
+        document.getElementById('item-id').value = item.id;
+        document.getElementById('item-name').value = item.name;
+        document.getElementById('item-description').value = item.description || '';
+        document.getElementById('modal-title').textContent = 'Edit Stationary Item';
+        document.getElementById('stationary-modal').classList.remove('hidden');
+    }
+}
+
+async function deleteItem(id) {
+    if (confirm('Are you sure you want to delete this item?')) {
+        await apiFetch('/api/stationary/' + id, 'DELETE');
+        showToast('Item deleted!');
+        loadStationaryItems();
+    }
+}
+
+if (IS_ADMIN) {
+    document.getElementById('add-stationary-btn').addEventListener('click', () => {
+        document.getElementById('item-id').value = '';
+        document.getElementById('item-name').value = '';
+        document.getElementById('item-description').value = '';
+        document.getElementById('modal-title').textContent = 'Add Stationary Item';
+        document.getElementById('stationary-modal').classList.remove('hidden');
+    });
+
+    document.getElementById('cancel-btn').addEventListener('click', () => {
+        document.getElementById('stationary-modal').classList.add('hidden');
+    });
+
+    document.getElementById('stationary-form').addEventListener('submit', async e => {
+        e.preventDefault();
+        const id = document.getElementById('item-id').value;
+        const data = {
+            name: document.getElementById('item-name').value,
+            description: document.getElementById('item-description').value
+        };
+        if (id) {
+            await apiFetch('/api/stationary/' + id, 'PUT', data);
+            showToast('Item updated!');
+        } else {
+            await apiFetch('/api/stationary', 'POST', data);
+            showToast('Item added!');
+        }
+        document.getElementById('stationary-modal').classList.add('hidden');
+        loadStationaryItems();
+    });
+} else {
+    document.getElementById('stationary-upload-form').addEventListener('submit', async e => {
+        e.preventDefault();
+        await apiFetch('/api/requests/stationary', 'POST', {
+            name: document.getElementById('other-name').value,
+            quantity: document.getElementById('other-quantity').value,
+            desc: document.getElementById('other-desc').value
+        });
+        showToast('Stationary request submitted!');
+        e.target.reset();
+        loadStationary();
+    });
+}
+
+loadStationary();
+</script>
+{% endblock %}
